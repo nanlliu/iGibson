@@ -1,6 +1,6 @@
 # scene
 scene: igibson
-scene_id: Rs_int
+scene_id: Ihlen_1_int
 build_graph: true
 load_texture: true
 pybullet_load_texture: true
@@ -37,7 +37,7 @@ discount_factor: 0.99
 
 # termination condition
 dist_tol: 0.36  # body width
-max_step: 500
+max_step: 0
 max_collisions_allowed: 500
 
 # misc config
@@ -50,9 +50,9 @@ output: [task_obs, rgb, depth]
 # Intel Realsense Depth Camera D435
 # https://store.intelrealsense.com/buy-intel-realsense-depth-camera-d435.html
 fisheye: false
-image_width: 160
-image_height: 90
-vertical_fov: 42.5
+image_width: 256
+image_height: 256
+vertical_fov: 45
 # depth
 depth_low : 0.1
 depth_high: 10.0

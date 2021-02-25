@@ -475,14 +475,23 @@ class InteractiveIndoorScene(StaticIndoorScene):
         """
         Randomize texture/material for all objects in the scene
         """
+        materials, colors, names = [], [], []
         if not self.texture_randomization:
             logging.warning(
                 'calling randomize_texture while texture_randomization is False during initialization.')
             return
         for int_object in self.objects_by_name:
+            # don't randomize floors, walls and ceilings
+            if 'floors' in int_object or 'walls' in int_object or 'ceilings' in int_object:
+                continue
             obj = self.objects_by_name[int_object]
-            obj.randomize_texture()
-
+            material, color = obj.randomize_texture()
+            materials.append(material)
+            colors.append(color)
+            names.append(obj.name)
+            
+        return materials, colors, names
+        
     def check_collision(self, body_a, body_b=None, link_a=None, fixed_body_ids=None):
         """
         Helper function to check for collision for scene quality

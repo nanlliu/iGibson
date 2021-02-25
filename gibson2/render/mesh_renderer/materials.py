@@ -220,6 +220,39 @@ class RandomizedMaterial(Material):
         rotation = random.randint(0, 3) * math.pi / 2.
         self.transform_param = [scale, scale, rotation]
 
+    def custom_randomize(self, material=None, material_id=None):
+        """
+        Randomize the material by randomly sampling a material id that belongs
+        to one of the material classes. All potential materials have already
+        been loaded to memory.
+        """
+        if self.material_ids is None or material_id is None:
+            return
+        
+        material_id_keys = list(self.material_ids.keys())
+
+        if material is not None:
+            if material in material_id_keys:
+                self.random_class = material
+            else:
+                self.random_class = random.choice(material_id_keys)
+        else:
+            self.random_class = random.choice(material_id_keys)
+            
+        self.random_instance = self.material_ids[self.random_class][material_id]
+        
+        self.texture_id = self.random_instance['diffuse']
+        self.metallic_texture_id = self.random_instance['metallic']
+        self.roughness_texture_id = self.random_instance['roughness']
+        self.normal_texture_id = self.random_instance['normal']
+    
+        # scaling by 4 is typically good
+        scale = np.random.normal(loc=4, scale=1)
+        # scaling should be at least 2.
+        scale = max(scale, 2)
+        rotation = random.randint(0, 3) * math.pi / 2.
+        self.transform_param = [scale, scale, rotation]
+
     def __str__(self):
         return (
             "RandomizedMaterial(material_type: {}, texture_id: {}, "

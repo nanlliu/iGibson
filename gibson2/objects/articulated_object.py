@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+import random
 import gibson2
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -123,6 +124,26 @@ class URDFObject(Object):
         #         'visual_3.obj': randomized_material_2
         #     }
         # ]
+        self.sofa_color_mapping = {'fabric': ['brown', 'grey', 'iris'], 'leather': ['purple', 'white', 'black']}
+        self.sofa_color_index_mapping = {'fabric': [0, 1, 7], 'leather': [1, 4, 7]}
+
+        self.lamp_color_mapping = {'metal': ['gray'],
+                                   'plastic': ['brown'],
+                                   'paint': ['white'],
+                                   'wood': ['baby blue']}
+        
+        self.lamp_color_index_mapping = {'metal': [0], 'plastic': [0], 'paint': [0], 'wood': [0]}
+
+        self.coffee_table_color_mapping = {'paper': ['white'],
+                                           'paint': ['black'],
+                                           'metal': ['drifted gray'],
+                                           'chipboard': ['blue']}
+
+        self.coffee_table_color_index_mapping = {'paper': [0], 'paint': [1], 'metal': [5], 'chipboard': [0]}
+
+        self.cabinet_color_mapping = {'wood': ['baby blue'], 'metal': ['drifted gray'], 'paint': ['cream']}
+        self.cabinet_color_index_mapping = {'wood': [0], 'metal': [0], 'paint': [0]}
+        
         self.visual_mesh_to_material = []
 
         # a list of all materials used, RandomizedMaterial
@@ -475,9 +496,42 @@ class URDFObject(Object):
         """
         Randomize texture and material for each link / visual shape
         """
-        for material in self.materials:
-            material.randomize()
+        selected_material = None
+        color = None
+        
+        if self.name in ['walls', 'ceilings', 'floors']:
+            for material in self.materials:
+                material.randomize()
+        else:
+            if self.name == 'floor_lamp_27':
+                selected_material = random.choice(["metal", "plastic", "paint", "wood"])
+                color_mapping = self.lamp_color_mapping
+                color_idx_mapping = self.lamp_color_index_mapping
+            elif self.name == 'bottom_cabinet_28':
+                selected_material = random.choice(["wood", "metal", "paint"])
+                color_mapping = self.cabinet_color_mapping
+                color_idx_mapping = self.cabinet_color_index_mapping
+            elif self.name == 'coffee_table_26':
+                selected_material = random.choice(['paper', 'paint', 'metal', 'chipboard'])
+                color_mapping = self.coffee_table_color_mapping
+                color_idx_mapping = self.coffee_table_color_index_mapping
+            elif self.name == 'sofa_25':
+                selected_material = random.choice(['fabric', 'leather'])
+                color_mapping = self.sofa_color_mapping
+                color_idx_mapping = self.sofa_color_index_mapping
+            else:
+                raise NotImplementedError
+            
+            num_options = len(color_mapping[selected_material])
+            idx = random.randint(0, num_options - 1)
+            color = color_mapping[selected_material][idx]
+            material_id = color_idx_mapping[selected_material][idx]
+            
+            for material in self.materials:
+                material.custom_randomize(material=selected_material, material_id=material_id)
+        
         self.update_friction()
+        return selected_material, color
 
     def update_friction(self):
         """
@@ -530,6 +584,7 @@ class URDFObject(Object):
         else:
             material_groups_file = os.path.join(
                 self.model_path, 'misc/material_groups.json')
+            print(material_groups_file)
 
         assert os.path.isfile(material_groups_file), \
             'cannot find material group: {}'.format(material_groups_file)
