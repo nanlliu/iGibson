@@ -226,8 +226,6 @@ class RandomizedMaterial(Material):
         to one of the material classes. All potential materials have already
         been loaded to memory.
         """
-        if self.material_ids is None or material_id is None:
-            return
         
         material_id_keys = list(self.material_ids.keys())
 

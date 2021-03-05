@@ -124,7 +124,21 @@ class URDFObject(Object):
         #         'visual_3.obj': randomized_material_2
         #     }
         # ]
-        self.sofa_color_mapping = {'fabric': ['brown', 'grey', 'iris'], 'leather': ['purple', 'white', 'black']}
+        self.wall_color_mapping = {'bricks': ['blue gray'],
+                                   'concrete': ['concrete gray'],
+                                   'paint': ['cream']}
+        
+        self.wall_color_index_mapping = {'bricks': [0], 'concrete': [0], 'paint': [0]}
+        
+        self.floor_color_mapping = {'asphalt': ['asphalt gray'],
+                                    'concrete': ['concrete gray'],
+                                    'planks': ['blue vinyl']}
+        
+        self.floor_color_index_mapping = {'asphalt': [0],
+                                          'concrete': [0],
+                                          'planks': [2]}
+        
+        self.sofa_color_mapping = {'fabric': ['brown', 'gray', 'iris'], 'leather': ['purple', 'white', 'black']}
         self.sofa_color_index_mapping = {'fabric': [0, 1, 7], 'leather': [1, 4, 7]}
 
         self.lamp_color_mapping = {'metal': ['gray'],
@@ -141,7 +155,7 @@ class URDFObject(Object):
 
         self.coffee_table_color_index_mapping = {'paper': [0], 'paint': [1], 'metal': [5], 'chipboard': [0]}
 
-        self.cabinet_color_mapping = {'wood': ['baby blue'], 'metal': ['drifted gray'], 'paint': ['cream']}
+        self.cabinet_color_mapping = {'wood': ['baby blue'], 'metal': ['drifted gray'], 'paint': ['white']}
         self.cabinet_color_index_mapping = {'wood': [0], 'metal': [0], 'paint': [0]}
         
         self.visual_mesh_to_material = []
@@ -499,7 +513,7 @@ class URDFObject(Object):
         selected_material = None
         color = None
         
-        if self.name in ['walls', 'ceilings', 'floors']:
+        if self.name in ['ceilings']:
             for material in self.materials:
                 material.randomize()
         else:
@@ -519,6 +533,14 @@ class URDFObject(Object):
                 selected_material = random.choice(['fabric', 'leather'])
                 color_mapping = self.sofa_color_mapping
                 color_idx_mapping = self.sofa_color_index_mapping
+            elif self.name == 'walls':
+                selected_material = random.choice(['bricks', 'concrete', 'paint'])
+                color_mapping = self.wall_color_mapping
+                color_idx_mapping = self.wall_color_index_mapping
+            elif self.name == 'floors':
+                selected_material = random.choice(['asphalt', 'concrete', 'planks'])
+                color_mapping = self.floor_color_mapping
+                color_idx_mapping = self.floor_color_index_mapping
             else:
                 raise NotImplementedError
             
