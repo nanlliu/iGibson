@@ -233,10 +233,14 @@ class RandomizedMaterial(Material):
             if material in material_id_keys:
                 self.random_class = material
             else:
+                # different objects could have different parts, and they don't necessarily share the same materials
                 self.random_class = random.choice(material_id_keys)
+                material_id = 0
         else:
+            # different objects could have different parts, and they don't necessarily share the same materials
             self.random_class = random.choice(material_id_keys)
-            
+            material_id = 0
+
         self.random_instance = self.material_ids[self.random_class][material_id]
         
         self.texture_id = self.random_instance['diffuse']

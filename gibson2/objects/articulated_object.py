@@ -124,22 +124,31 @@ class URDFObject(Object):
         #         'visual_3.obj': randomized_material_2
         #     }
         # ]
-        self.wall_color_mapping = {'bricks': ['blue gray'],
-                                   'concrete': ['concrete gray'],
-                                   'paint': ['cream']}
+        self.wall_color_mapping = {'plaster': ['white']}
+        self.wall_color_index_mapping = {'plaster': [2]}
         
-        self.wall_color_index_mapping = {'bricks': [0], 'concrete': [0], 'paint': [0]}
+        self.floor_color_mapping = {'wood_floor': ['unknown']}
+        self.floor_color_index_mapping = {'wood_floor': [2]}
+
+        self.window_color_mapping = {'paint': ['white']}
+        self.window_color_index_mapping = {'paint': [0]}
         
-        self.floor_color_mapping = {'asphalt': ['asphalt gray'],
-                                    'concrete': ['concrete gray'],
-                                    'planks': ['blue vinyl']}
-        
-        self.floor_color_index_mapping = {'asphalt': [0],
-                                          'concrete': [0],
-                                          'planks': [2]}
-        
-        self.sofa_color_mapping = {'fabric': ['brown', 'gray', 'iris'], 'leather': ['purple', 'white', 'black']}
-        self.sofa_color_index_mapping = {'fabric': [0, 1, 7], 'leather': [1, 4, 7]}
+        self.sofa_color_mapping = {'fabric': ['blue', 'gray'], 'leather': ['red']}
+        self.sofa_color_index_mapping = {'fabric': [0, 1], 'leather': [1]}
+
+        self.cabinet_color_mapping = {'wood': ['maple', 'garden walnut']}
+        self.cabinet_color_index_mapping = {'wood': [0, 1]}
+
+        self.coffee_table_color_mapping = {'wood': ['maple', 'garden walnut']}
+        self.coffee_table_color_index_mapping = {'wood': [0, 1]}
+
+        self.stool_table_color_mapping = {'fabric': ['blue', 'gray'], 'leather': ['red']}
+        self.stool_table_color_index_mapping = {'fabric': [0, 1], 'leather': [1]}
+
+        self.sofa_materials = list(self.sofa_color_mapping.keys())
+        self.cabinet_materials = list(self.cabinet_color_mapping.keys())
+        self.coffee_table_materials = list(self.coffee_table_color_mapping.keys())
+        self.stool_materials = list(self.stool_table_color_mapping.keys())
 
         self.lamp_color_mapping = {'metal': ['gray'],
                                    'plastic': ['brown'],
@@ -147,17 +156,6 @@ class URDFObject(Object):
                                    'wood': ['baby blue']}
         
         self.lamp_color_index_mapping = {'metal': [0], 'plastic': [0], 'paint': [0], 'wood': [0]}
-
-        self.coffee_table_color_mapping = {'paper': ['white'],
-                                           'paint': ['black'],
-                                           'metal': ['drifted gray'],
-                                           'chipboard': ['blue']}
-
-        self.coffee_table_color_index_mapping = {'paper': [0], 'paint': [1], 'metal': [5], 'chipboard': [0]}
-
-        self.cabinet_color_mapping = {'wood': ['baby blue'], 'metal': ['drifted gray'], 'paint': ['white']}
-        self.cabinet_color_index_mapping = {'wood': [0], 'metal': [0], 'paint': [0]}
-        
         self.visual_mesh_to_material = []
 
         # a list of all materials used, RandomizedMaterial
@@ -512,43 +510,47 @@ class URDFObject(Object):
         """
         selected_material = None
         color = None
-        
-        if self.name in ['ceilings']:
+        if self.name not in ['stool_4', 'coffee_table_5', 'bottom_cabinet_0', 'sofa_2',
+                             'walls', 'floors', 'window_56', 'window_57']:
             for material in self.materials:
                 material.randomize()
         else:
-            if self.name == 'floor_lamp_27':
-                selected_material = random.choice(["metal", "plastic", "paint", "wood"])
-                color_mapping = self.lamp_color_mapping
-                color_idx_mapping = self.lamp_color_index_mapping
-            elif self.name == 'bottom_cabinet_28':
-                selected_material = random.choice(["wood", "metal", "paint"])
-                color_mapping = self.cabinet_color_mapping
-                color_idx_mapping = self.cabinet_color_index_mapping
-            elif self.name == 'coffee_table_26':
-                selected_material = random.choice(['paper', 'paint', 'metal', 'chipboard'])
+            if self.name == 'stool_4':
+                selected_material = random.choice(self.stool_materials)
+                color_mapping = self.stool_table_color_mapping
+                color_idx_mapping = self.stool_table_color_index_mapping
+            elif self.name == 'coffee_table_5':
+                selected_material = random.choice(self.coffee_table_materials)
                 color_mapping = self.coffee_table_color_mapping
                 color_idx_mapping = self.coffee_table_color_index_mapping
-            elif self.name == 'sofa_25':
-                selected_material = random.choice(['fabric', 'leather'])
+            elif self.name == 'bottom_cabinet_0':
+                selected_material = random.choice(self.cabinet_materials)
+                color_mapping = self.cabinet_color_mapping
+                color_idx_mapping = self.cabinet_color_index_mapping
+            elif self.name == 'sofa_2':
+                selected_material = random.choice(self.sofa_materials)
                 color_mapping = self.sofa_color_mapping
                 color_idx_mapping = self.sofa_color_index_mapping
             elif self.name == 'walls':
-                selected_material = random.choice(['bricks', 'concrete', 'paint'])
+                selected_material = 'plaster'
                 color_mapping = self.wall_color_mapping
                 color_idx_mapping = self.wall_color_index_mapping
             elif self.name == 'floors':
-                selected_material = random.choice(['asphalt', 'concrete', 'planks'])
+                selected_material = 'wood_floor'
                 color_mapping = self.floor_color_mapping
                 color_idx_mapping = self.floor_color_index_mapping
+            elif 'window' in self.name:
+                selected_material = 'paint'
+                color_mapping = self.window_color_mapping
+                color_idx_mapping = self.window_color_index_mapping
             else:
                 raise NotImplementedError
-            
+
             num_options = len(color_mapping[selected_material])
             idx = random.randint(0, num_options - 1)
             color = color_mapping[selected_material][idx]
             material_id = color_idx_mapping[selected_material][idx]
-            
+
             for material in self.materials:
                 material.custom_randomize(material=selected_material, material_id=material_id)
         

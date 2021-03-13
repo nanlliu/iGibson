@@ -233,19 +233,21 @@ class InteractiveIndoorScene(StaticIndoorScene):
                 joint_parent = joint_connecting_embedded_link.find(
                     "parent").attrib["link"]
 
-                self.add_object(category,
-                                model=model,
-                                model_path=model_path,
-                                filename=filename,
-                                bounding_box=bounding_box,
-                                scale=scale,
-                                object_name=object_name,
-                                joint_type=joint_type,
-                                position=joint_xyz,
-                                orientation_rpy=joint_rpy,
-                                joint_name=joint_name,
-                                joint_parent=joint_parent,
-                                in_rooms=in_rooms)
+                # remove the white computer table and the tv stand
+                if object_name not in ['table_18', 'bottom_cabinet_13']:
+                    self.add_object(category,
+                                    model=model,
+                                    model_path=model_path,
+                                    filename=filename,
+                                    bounding_box=bounding_box,
+                                    scale=scale,
+                                    object_name=object_name,
+                                    joint_type=joint_type,
+                                    position=joint_xyz,
+                                    orientation_rpy=joint_rpy,
+                                    joint_name=joint_name,
+                                    joint_parent=joint_parent,
+                                    in_rooms=in_rooms)
             elif link.attrib["name"] != "world":
                 logging.error(
                     "iGSDF should only contain links that represent embedded URDF objects")
@@ -480,18 +482,16 @@ class InteractiveIndoorScene(StaticIndoorScene):
             logging.warning(
                 'calling randomize_texture while texture_randomization is False during initialization.')
             return
+        manipulated_objects = {'stool', 'sofa', 'coffee_table', 'bottom_cabinet'}
         for int_object in self.objects_by_name:
-            # don't randomize ceilings
-            if 'ceilings' in int_object:
-                continue
-            obj = self.objects_by_name[int_object]
-            material, color = obj.randomize_texture()
-            
-            obj_name = obj.name
-            info[obj_name] = {}
-            info[obj_name]['material'] = material
-            info[obj_name]['color'] = color
-            
+            if any(obj in int_object for obj in manipulated_objects):
+                obj = self.objects_by_name[int_object]
+                material, color = obj.randomize_texture()
+                obj_name = obj.name
+                info[obj_name] = {}
+                info[obj_name]['material'] = material
+                info[obj_name]['color'] = color
+
         return info
         
     def check_collision(self, body_a, body_b=None, link_a=None, fixed_body_ids=None):

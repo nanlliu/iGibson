@@ -208,16 +208,35 @@ class Simulator:
             # use randomized texture
             for body_id, visual_mesh_to_material in \
                     zip(new_object_ids, scene.visual_mesh_to_material):
-                shadow_caster = True
-                if scene.objects_by_id[body_id].category == 'ceilings':
-                    shadow_caster = False
-                class_id = self.class_name_to_class_id.get(
-                    scene.objects_by_id[body_id].category, SemanticClass.SCENE_OBJS)
-                self.load_articulated_object_in_renderer(
-                    body_id,
-                    class_id=class_id,
-                    visual_mesh_to_material=visual_mesh_to_material,
-                    shadow_caster=shadow_caster)
+                if body_id not in [3, 4, 6, 7]:
+                    use_pbr = True
+                    use_pbr_mapping = True
+                    shadow_caster = True
+                    if scene.scene_source == 'IG':
+                        if scene.objects_by_id[body_id].category in ['walls', 'floors', 'ceilings']:
+                            use_pbr = False
+                            use_pbr_mapping = False
+                    if scene.objects_by_id[body_id].category == 'ceilings':
+                        shadow_caster = False
+                    class_id = self.class_name_to_class_id.get(
+                        scene.objects_by_id[body_id].category, SemanticClass.SCENE_OBJS)
+                    self.load_articulated_object_in_renderer(
+                        body_id,
+                        class_id=body_id,
+                        use_pbr=use_pbr,
+                        use_pbr_mapping=use_pbr_mapping,
+                        shadow_caster=shadow_caster)
+                else:
+                    shadow_caster = True
+                    if scene.objects_by_id[body_id].category == 'ceilings':
+                        shadow_caster = False
+                    class_id = self.class_name_to_class_id.get(
+                        scene.objects_by_id[body_id].category, SemanticClass.SCENE_OBJS)
+                    self.load_articulated_object_in_renderer(
+                        body_id,
+                        class_id=class_id,
+                        visual_mesh_to_material=visual_mesh_to_material,
+                        shadow_caster=shadow_caster)
         else:
             # use default texture
             for body_id in new_object_ids:
@@ -546,7 +565,7 @@ class Simulator:
                 _, _, _, _, pos, orn = p.getLinkState(id, link_id)
             poses_rot.append(np.ascontiguousarray(quat2rotmat(xyzw2wxyz(orn))))
             poses_trans.append(np.ascontiguousarray(xyz2mat(pos)))
-
+        print(self.materials)
         self.renderer.add_robot(object_ids=visual_objects,
                                 link_ids=link_ids,
                                 pybullet_uuid=ids[0],
