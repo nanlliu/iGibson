@@ -93,10 +93,10 @@ def compute_all_relationships(scene_struct, eps=0.5):
                 coords2 = obj2['pos']
                 diff = [coords2[k] - coords1[k] for k in [0, 1, 2]]
                 dot = sum(diff[k] * direction_vec[k] for k in [0, 1, 2])
-                if ('sofa' in key1 or 'sofa' in key2) and name in ['front', 'behind']:
-                    if dot > 2 * eps:
+                if 'sofa' in key1 or 'sofa' in key2:
+                    if dot > 2.5 * eps:
                         related.add(j)
-                elif dot > eps:
+                elif dot > 1.5 * eps:
                     related.add(j)
             all_relationships[name].append(sorted(list(related)))
     return all_relationships
@@ -270,10 +270,10 @@ def main():
     
     images = []
 
-    for i in range(1):
+    for i in range(50000):
         jitter = np.random.uniform(-0.8, 0.8, size=1)
 
-        camera = np.array([-0.1, -3.4, 2.3])
+        camera = np.array([-0.1, -3.5, 2.3])
         camera[0] += jitter
         view_direction = np.array([0, 0.7, -0.7])
         view_direction[0] -= jitter / 3
@@ -297,7 +297,7 @@ def main():
         relationships = compute_all_relationships(scene_struct)
         scene_struct['relationships'] = relationships
 
-        print_relationships(scene_struct)
+        # print_relationships(scene_struct)
 
         for j in range(3):
             s.step()
@@ -313,16 +313,16 @@ def main():
 
         im = s.renderer.render(modes=('rgb'))[0]
 
-        save_path = '/home/nan/data/igibson_dataset'
+        save_path = '/home/nan/data/igibson_50000_dataset'
 
-        imsave(f'test-{i}.png', im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
+        # imsave(f'test-{i}.png', im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
 
-        # json_path = os.path.join(save_path, 'igibson_256_30000_diff_camera/scenes/igibson_scene_{:06}.json'.format(i))
-        # with open(json_path, 'w') as f:
-        #     json.dump(json_scene, f)
-        #
-        # image_path = os.path.join(save_path, 'igibson_256_30000_diff_camera/images/igibson_image_{:06}.png'.format(i))
-        # imsave(image_path, im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
+        json_path = os.path.join(save_path, 'scenes/igibson_scene_{:06}.json'.format(i))
+        with open(json_path, 'w') as f:
+            json.dump(json_scene, f)
+
+        image_path = os.path.join(save_path, 'images/igibson_image_{:06}.png'.format(i))
+        imsave(image_path, im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
 
         # print(image_path)
         # images.append(im)
