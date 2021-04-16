@@ -11,9 +11,9 @@ from gibson2.utils.utils import rotate_vector_3d, get_rpy_from_transform
 from skimage.io import imsave
 from skimage import img_as_ubyte
 
-from my_scene import convert_label
+import torch
+from torchvision.utils import make_grid, save_image
 
-np.random.seed(301)
 
 loaded_objects = ['walls', 'floors', 'ceilings', 'sofa', 'floor_lamp',
                   'coffee_table', 'chair', 'counter', 'window',
@@ -25,13 +25,13 @@ background_objects = list(set(loaded_objects) - set(manipulated_objects))
 
 facing_directions = {'right': np.array([0, 0, 0.70786583, 0.70634692]),
                      'left': np.array([0, 0, -0.70786583, 0.70634692]),
-                     'front': np.array([0, 0, 0, 1]),
-                     'behind': np.array([0, 0, 1, 0])}
+                     'behind': np.array([0, 0, 0, 1]),
+                     'front': np.array([0, 0, 1, 0])}
 
 sofa_pos = {'right': np.array([-1.51745653, -1.72151279, 0.39529318]),
             'left': np.array([1.51745653, -1.72151279, 0.39529318]),
-            'front': np.array([0, -0.5, 0.39529318]),
-            'behind': np.array([0, -2.9, 0.39529318])}
+            'behind': np.array([0, -0.5, 0.39529318]),
+            'front': np.array([0, -2.9, 0.39529318])}
 
 all_possible_colors = {'blue': 0, 'gray': 1, 'red': 2, 'maple': 3, 'garden walnut': 4, 'none': 5}
 all_possible_shapes = {'sofa_2': 0, 'coffee_table_5': 1, 'bottom_cabinet_0': 2, 'stool_4': 3, 'none': 4}
@@ -79,21 +79,24 @@ def compute_all_relationships(scene_struct, eps=0.5):
         if name == 'above' or name == 'below':
             continue
         all_relationships[name] = []
-        for i, obj1 in enumerate(scene_struct['objects'].values()):
+        for i, (key1, obj1) in enumerate(scene_struct['objects'].items()):
             # obj1 could be empty dict
             if not obj1:
                 all_relationships[name].append([])
                 continue
             coords1 = obj1['pos']
             related = set()
-            for j, obj2 in enumerate(scene_struct['objects'].values()):
+            for j, (key2, obj2) in enumerate(scene_struct['objects'].items()):
                 # obj2 could be empty dict
                 if i == j or not obj2:
                     continue
                 coords2 = obj2['pos']
                 diff = [coords2[k] - coords1[k] for k in [0, 1, 2]]
                 dot = sum(diff[k] * direction_vec[k] for k in [0, 1, 2])
-                if dot > eps:
+                if ('sofa' in key1 or 'sofa' in key2) and name in ['front', 'behind']:
+                    if dot > 2 * eps:
+                        related.add(j)
+                elif dot > eps:
                     related.add(j)
             all_relationships[name].append(sorted(list(related)))
     return all_relationships
@@ -165,7 +168,7 @@ def randomize_objects(pos_ori, curr_keys, body_ids, coordinates_range, dist=1):
                 new_orn = facing_directions[new_facing_direction]
                 new_pos = sofa_pos[new_facing_direction]
             elif key == 'coffee_table_5':
-                new_facing_direction = 'right'
+                new_facing_direction = np.random.choice(['left', 'right'])
                 new_orn = facing_directions[new_facing_direction]
                 new_pos = np.array(
                     [np.random.uniform(x_min, x_max),
@@ -192,7 +195,7 @@ def randomize_objects(pos_ori, curr_keys, body_ids, coordinates_range, dist=1):
                 if curr_key == 'sofa_2':
                     new_dist = 1.5 * dist
                 else:
-                    new_dist = dist
+                    new_dist = 1.2 * dist
 
                 if center_dist < new_dist:
                     no_collision = False
@@ -219,49 +222,6 @@ def extract_relation(relationships, idx1, idx2):
         return None
 
 
-def convert_label(json_scene, possible_object_indices):
-    if len(possible_object_indices) == 1:
-        idx1, idx2 = possible_object_indices[0], -1
-        relation = 'none'
-    else:
-        idx1, idx2 = np.random.choice(possible_object_indices, size=2, replace=False)
-        assert idx1 != idx2
-        relation = extract_relation(json_scene['relationships'], idx1, idx2)
-        assert relation is not None
-
-    obj1 = json_scene['objects'][idx1]
-    obj1_color = obj1['color']
-    obj1_shape = obj1['shape']
-    obj1_material = obj1['material']
-
-    if idx2 == -1:
-        obj2_color = 'none'
-        obj2_shape = 'none'
-        obj2_material = 'none'
-    else:
-        obj2 = json_scene['objects'][idx2]
-        obj2_color = obj2['color']
-        obj2_shape = obj2['shape']
-        obj2_material = obj2['material']
-
-    # print('converting...')
-    # print(' '.join([obj1_color, obj1_material, obj1_shape]),
-    #       relation,
-    #       ' '.join([obj2_color, obj2_material, obj2_shape]))
-
-    label = [all_possible_colors[obj1_color],
-             all_possible_materials[obj1_material],
-             all_possible_shapes[obj1_shape],
-             all_possible_relations[relation],
-             all_possible_colors[obj2_color],
-             all_possible_materials[obj2_material],
-             all_possible_shapes[obj2_shape]
-             ]
-
-    # print(label)
-    return label
-
-
 def main():
     render_to_tensor = False
 
@@ -280,8 +240,7 @@ def main():
 
     s.import_ig_scene(scene)
 
-    camera = np.array([-0.1, -3.5, 2.3])        # info = scene.randomize_texture()
-        # print(info)
+    camera = np.array([-0.1, -3.5, 2.3])
     view_direction = np.array([0, 0.7, -0.7])
     s.renderer.set_camera(camera, camera + view_direction, [0, 0, 1])
 
@@ -294,8 +253,8 @@ def main():
 
     scene_struct['directions']['left'] = tuple(left)
     scene_struct['directions']['right'] = tuple(right)
-    scene_struct['directions']['front'] = tuple(front)
-    scene_struct['directions']['behind'] = tuple(behind)
+    scene_struct['directions']['front'] = tuple(behind)
+    scene_struct['directions']['behind'] = tuple(front)
 
     pos_ori, body_ids, object_sizes = extract_pos_ori_and_body_ids(scene.objects_by_name)
     object_names = ['sofa_2', "stool_4", "coffee_table_5", "bottom_cabinet_0"]
@@ -308,8 +267,19 @@ def main():
     x_max = 1.25
     y_min = -2.9
     y_max = -0.5
+    
+    images = []
 
-    for i in range(30000):
+    for i in range(1):
+        jitter = np.random.uniform(-0.8, 0.8, size=1)
+
+        camera = np.array([-0.1, -3.4, 2.3])
+        camera[0] += jitter
+        view_direction = np.array([0, 0.7, -0.7])
+        view_direction[0] -= jitter / 3
+        # view_direction[1] -= jitter / 2
+        s.renderer.set_camera(camera, camera + view_direction, [0, 0, 1])
+
         info = scene.randomize_texture()
 
         object_keys_indices = sorted(np.random.choice(
@@ -327,7 +297,7 @@ def main():
         relationships = compute_all_relationships(scene_struct)
         scene_struct['relationships'] = relationships
 
-        # print_relationships(scene_struct)
+        print_relationships(scene_struct)
 
         for j in range(3):
             s.step()
@@ -341,21 +311,24 @@ def main():
             else:
                 json_scene['objects'].append(None)
 
-        label = convert_label(json_scene, object_keys_indices)
-        json_scene['label'] = label
-
         im = s.renderer.render(modes=('rgb'))[0]
 
         save_path = '/home/nan/data/igibson_dataset'
 
-        json_path = os.path.join(save_path, 'scenes/igibson_scene_{:06}.json'.format(i))
-        with open(json_path, 'w') as f:
-            json.dump(json_scene, f)
+        imsave(f'test-{i}.png', im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
 
-        image_path = os.path.join(save_path, 'images/igibson_image_{:06}.png'.format(i))
-        imsave(image_path, im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
+        # json_path = os.path.join(save_path, 'igibson_256_30000_diff_camera/scenes/igibson_scene_{:06}.json'.format(i))
+        # with open(json_path, 'w') as f:
+        #     json.dump(json_scene, f)
+        #
+        # image_path = os.path.join(save_path, 'igibson_256_30000_diff_camera/images/igibson_image_{:06}.png'.format(i))
+        # imsave(image_path, im.cpu().numpy() if render_to_tensor else img_as_ubyte(im))
 
-        print(image_path)
+        # print(image_path)
+        # images.append(im)
+
+    # grid = make_grid(torch.from_numpy(np.array(images).transpose((0, 3, 1, 2))), nrow=3)
+    # save_image(grid, 'grid.png')
 
     s.disconnect()
 
