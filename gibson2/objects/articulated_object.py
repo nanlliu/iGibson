@@ -124,19 +124,13 @@ class URDFObject(Object):
         #         'visual_3.obj': randomized_material_2
         #     }
         # ]
-        self.wall_color_mapping = {'bricks': ['blue gray'],
-                                   'concrete': ['concrete gray'],
-                                   'paint': ['cream']}
+        self.wall_color_mapping = {'concrete': ['concrete gray']}
         
-        self.wall_color_index_mapping = {'bricks': [0], 'concrete': [0], 'paint': [0]}
+        self.wall_color_index_mapping = {'concrete': [0]}
         
-        self.floor_color_mapping = {'asphalt': ['asphalt gray'],
-                                    'concrete': ['concrete gray'],
-                                    'planks': ['blue vinyl']}
+        self.floor_color_mapping = {'concrete': ['concrete gray']}
         
-        self.floor_color_index_mapping = {'asphalt': [0],
-                                          'concrete': [0],
-                                          'planks': [2]}
+        self.floor_color_index_mapping = {'concrete': [0]}
         
         self.sofa_color_mapping = {'fabric': ['brown', 'gray', 'iris'], 'leather': ['purple', 'white', 'black']}
         self.sofa_color_index_mapping = {'fabric': [0, 1, 7], 'leather': [1, 4, 7]}
@@ -534,11 +528,11 @@ class URDFObject(Object):
                 color_mapping = self.sofa_color_mapping
                 color_idx_mapping = self.sofa_color_index_mapping
             elif self.name == 'walls':
-                selected_material = random.choice(['bricks', 'concrete', 'paint'])
+                selected_material = random.choice(['concrete'])
                 color_mapping = self.wall_color_mapping
                 color_idx_mapping = self.wall_color_index_mapping
             elif self.name == 'floors':
-                selected_material = random.choice(['asphalt', 'concrete', 'planks'])
+                selected_material = random.choice(['concrete'])
                 color_mapping = self.floor_color_mapping
                 color_idx_mapping = self.floor_color_index_mapping
             else:
